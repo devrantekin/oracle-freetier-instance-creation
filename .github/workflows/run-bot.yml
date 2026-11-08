@@ -1,8 +1,8 @@
 name: Oracle 7/24 Mumbai Bot
 on:
-  workflow_dispatch: # Bu satır "Run workflow" butonunu zorunlu olarak var eder
+  workflow_dispatch:
   schedule:
-    - cron: '0 */5 * * *' # Bot kapansa bile 5 saatte bir otomatik yeniden başlar
+    - cron: '0 */5 * * *'
 
 jobs:
   run-oracle-bot:
@@ -18,20 +18,28 @@ jobs:
 
       - name: Gerekli Kütüphaneleri Yükle
         run: |
-          pip install oci paramiko python-dotenv requests
+          pip install oci paramiko python-dotenv
 
-      - name: Oracle Ayar Dosyasını Oluştur
+      - name: Botun Aradığı Özel Dosyaları Oluştur
         run: |
-          mkdir -p ~/.oci
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oracle_key.pem
-          chmod 600 ~/.oci/oracle_key.pem
+          # Botun hata verdiği "/home/ubuntu/oracle-freetier-instance-creation/" dizin yapısını taklit ediyoruz
+          sudo mkdir -p /home/ubuntu/oracle-freetier-instance-creation
           
-          echo "[DEFAULT]" > ~/.oci/config
-          echo "user=${{ secrets.OCI_USER_OCID }}" >> ~/.oci/config
-          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
-          echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
-          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
-          echo "key_file=~/.oci/oracle_key.pem" >> ~/.oci/config
+          # Private Key dosyasını oluşturuyoruz
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" | sudo tee /home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem > /dev/null
+          sudo chmod 600 /home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem
+          
+          # Botun ısrarla aradığı o 'oci_config' dosyasını tam istediği formatta oluşturuyoruz
+          echo "[DEFAULT]" | sudo tee /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+          echo "user=${{ secrets.OCI_USER_OCID }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+          echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+          echo "region=${{ secrets.OCI_REGION }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+          echo "key_file=/home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+
+          # Botun şifreleri okuduğu .env dosyasını oluşturuyoruz
+          echo "OCI_CONFIG_PATH=/home/ubuntu/oracle-freetier-instance-creation/oci_config" | sudo tee /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env > /dev/null
+          echo "COMPARTMENT_ID=${{ secrets.OCI_COMPARTMENT_OCID }}" | sudo tee -a /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env > /dev/null
 
       - name: Botu Başlat
         run: |
