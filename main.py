@@ -40,6 +40,8 @@ NOTIFY_EMAIL = os.getenv("NOTIFY_EMAIL", 'False').strip().lower() == 'true'
 EMAIL = os.getenv("EMAIL", "").strip()
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "").strip()
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "").strip()
+NOTIFY_EVERY = int(os.getenv("NOTIFY_EVERY_N_ATTEMPTS", "10").strip())
+ATTEMPT_COUNT = 0
 
 # Read the configuration from oci_config file
 config = configparser.ConfigParser()
@@ -324,6 +326,13 @@ def handle_errors(command, data, log):
         or any(retry_msg in message for retry_msg in retryable_messages)
     ):
         log.info("Command: %s--\nOutput: %s", command, data)
+        global ATTEMPT_COUNT
+        ATTEMPT_COUNT += 1
+        if ATTEMPT_COUNT % NOTIFY_EVERY == 0:
+            send_discord_message(
+                f"⏳ Deneme #{ATTEMPT_COUNT} başarısız: "
+                f"{data.get('code')} - {message[:150]}"
+            )
         time.sleep(WAIT_TIME)
         return True
 
