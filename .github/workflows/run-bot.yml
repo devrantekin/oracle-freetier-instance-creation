@@ -2,7 +2,7 @@ name: Oracle 7/24 Mumbai Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '0 */6 * * *'
 
 concurrency:
   group: oracle-bot
@@ -11,7 +11,7 @@ concurrency:
 jobs:
   run-oracle-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
 
@@ -31,20 +31,31 @@ jobs:
           OCI_FP: ${{ secrets.OCI_FINGERPRINT }}
           OCI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
           OCI_REGION: ${{ secrets.OCI_REGION }}
-          OCI_COMP: ${{ secrets.OCI_COMPARTMENT_OCID }}
         run: |
           printf '%s\n' "$OCI_PRIVATE_KEY" > oracle_key.pem
           chmod 600 oracle_key.pem
-          cat > oci_config <<EOF
-          [DEFAULT]
-          user=$OCI_USER
-          fingerprint=$OCI_FP
-          tenancy=$OCI_TENANCY
-          region=$OCI_REGION
-          key_file=$GITHUB_WORKSPACE/oracle_key.pem
-          EOF
-          echo "OCI_CONFIG_PATH=$GITHUB_WORKSPACE/oci_config" > .env
-          echo "COMPARTMENT_ID=$OCI_COMP" >> .env
+
+          {
+            echo "[DEFAULT]"
+            echo "user=$OCI_USER"
+            echo "fingerprint=$OCI_FP"
+            echo "tenancy=$OCI_TENANCY"
+            echo "region=$OCI_REGION"
+            echo "key_file=$GITHUB_WORKSPACE/oracle_key.pem"
+          } > oci_config
+
+          {
+            echo "OCI_CONFIG=$GITHUB_WORKSPACE/oci_config"
+            echo "OCT_FREE_AD=AD-1"
+            echo "DISPLAY_NAME=oracle-arm"
+            echo "REQUEST_WAIT_TIME_SECS=60"
+            echo "SSH_AUTHORIZED_KEYS_FILE=$GITHUB_WORKSPACE/id_rsa.pub"
+            echo "OCI_COMPUTE_SHAPE=VM.Standard.A1.Flex"
+            echo "OPERATING_SYSTEM=Canonical Ubuntu"
+            echo "OS_VERSION=22.04"
+            echo "ASSIGN_PUBLIC_IP=true"
+            echo "BOOT_VOLUME_SIZE=50"
+          } > oci.env
 
       - name: Botu çalıştır
         run: python main.py
