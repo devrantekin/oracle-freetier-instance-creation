@@ -18,7 +18,7 @@ jobs:
 
       - name: Gerekli Kütüphaneleri Yükle
         run: |
-          pip install oci paramiko python-dotenv
+          pip install oci paramiko python-dotenv requests
 
       - name: Botun Aradığı Özel Dosyaları Oluştur
         run: |
