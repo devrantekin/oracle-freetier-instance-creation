@@ -31,6 +31,7 @@ jobs:
           OCI_FP: ${{ secrets.OCI_FINGERPRINT }}
           OCI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
           OCI_REGION: ${{ secrets.OCI_REGION }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           printf '%s\n' "$OCI_PRIVATE_KEY" > oracle_key.pem
           chmod 600 oracle_key.pem
@@ -55,7 +56,14 @@ jobs:
             echo "OS_VERSION=22.04"
             echo "ASSIGN_PUBLIC_IP=true"
             echo "BOOT_VOLUME_SIZE=50"
+            echo "DISCORD_WEBHOOK=$DISCORD_WEBHOOK"
           } > oci.env
 
       - name: Botu çalıştır
         run: python main.py
+
+      - name: Logları göster
+        if: always()
+        run: |
+          tail -n 30 launch_instance.log 2>/dev/null || true
+          tail -n 30 setup_and_info.log 2>/dev/null || true
