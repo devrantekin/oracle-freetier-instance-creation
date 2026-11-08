@@ -18,7 +18,7 @@ jobs:
 
       - name: Gerekli Kütüphaneleri Yükle
         run: |
-          pip install oci
+          pip install oci paramiko
 
       - name: Oracle Ayar Dosyasını Oluştur
         run: |
