@@ -62,7 +62,7 @@ jobs:
             echo "ASSIGN_PUBLIC_IP=true"
             echo "BOOT_VOLUME_SIZE=50"
             echo "DISCORD_WEBHOOK=$DISCORD_WEBHOOK"
-            echo "NOTIFY_EVERY_N_ATTEMPTS=10"
+            echo "NOTIFY_EVERY_N_ATTEMPTS=1"
           } > oci.env
 
       - name: Botu çalıştır
