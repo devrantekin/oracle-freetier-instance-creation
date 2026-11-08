@@ -32,9 +32,14 @@ jobs:
           OCI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
           OCI_REGION: ${{ secrets.OCI_REGION }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
         run: |
           printf '%s\n' "$OCI_PRIVATE_KEY" > oracle_key.pem
           chmod 600 oracle_key.pem
+
+          if [ -n "$SSH_PUBLIC_KEY" ]; then
+            printf '%s\n' "$SSH_PUBLIC_KEY" > id_rsa.pub
+          fi
 
           {
             echo "[DEFAULT]"
@@ -57,6 +62,7 @@ jobs:
             echo "ASSIGN_PUBLIC_IP=true"
             echo "BOOT_VOLUME_SIZE=50"
             echo "DISCORD_WEBHOOK=$DISCORD_WEBHOOK"
+            echo "NOTIFY_EVERY_N_ATTEMPTS=10"
           } > oci.env
 
       - name: Botu çalıştır
