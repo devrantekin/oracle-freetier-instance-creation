@@ -20,26 +20,32 @@ jobs:
         run: |
           pip install oci paramiko python-dotenv requests
 
-      - name: Botun Aradığı Özel Dosyaları Oluştur
-        run: |
-          # Botun hata verdiği "/home/ubuntu/oracle-freetier-instance-creation/" dizin yapısını taklit ediyoruz
-          sudo mkdir -p /home/ubuntu/oracle-freetier-instance-creation
-          
-          # Private Key dosyasını oluşturuyoruz
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" | sudo tee /home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem > /dev/null
-          sudo chmod 600 /home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem
-          
-          # Botun ısrarla aradığı o 'oci_config' dosyasını tam istediği formatta oluşturuyoruz
-          echo "[DEFAULT]" | sudo tee /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
-          echo "user=${{ secrets.OCI_USER_OCID }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
-          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
-          echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
-          echo "region=${{ secrets.OCI_REGION }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
-          echo "key_file=/home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+            - name: Botun Aradığı Özel Dosyaları Oluştur
+              run: |
+                # Dizin yapısını taklit ediyoruz
+                sudo mkdir -p /home/ubuntu/oracle-freetier-instance-creation
+                
+                # Private Key dosyasını oluşturuyoruz
+                echo "${{ secrets.OCI_PRIVATE_KEY }}" | sudo tee /home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem > /dev/null
+                
+                # 🚨 YETKİLERİ DÜZELTİYORUZ (Herkes okuyabilsin ama değiştiremesin)
+                sudo chmod 644 /home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem
+                
+                # 'oci_config' dosyasını oluşturuyoruz
+                echo "[DEFAULT]" | sudo tee /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+                echo "user=${{ secrets.OCI_USER_OCID }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+                echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+                echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+                echo "region=${{ secrets.OCI_REGION }}" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+                echo "key_file=/home/ubuntu/oracle-freetier-instance-creation/oracle_key.pem" | sudo tee -a /home/ubuntu/oracle-freetier-instance-creation/oci_config > /dev/null
+                
+                # oci_config dosyasına da okuma izni veriyoruz
+                sudo chmod 644 /home/ubuntu/oracle-freetier-instance-creation/oci_config
+      
+                # Botun şifreleri okuduğu .env dosyasını oluşturuyoruz
+                echo "OCI_CONFIG_PATH=/home/ubuntu/oracle-freetier-instance-creation/oci_config" | sudo tee /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env > /dev/null
+                echo "COMPARTMENT_ID=${{ secrets.OCI_COMPARTMENT_OCID }}" | sudo tee -a /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env > /dev/null
 
-          # Botun şifreleri okuduğu .env dosyasını oluşturuyoruz
-          echo "OCI_CONFIG_PATH=/home/ubuntu/oracle-freetier-instance-creation/oci_config" | sudo tee /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env > /dev/null
-          echo "COMPARTMENT_ID=${{ secrets.OCI_COMPARTMENT_OCID }}" | sudo tee -a /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env > /dev/null
 
       - name: Botu Başlat
         run: |
