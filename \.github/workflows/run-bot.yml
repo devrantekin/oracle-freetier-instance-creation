@@ -1,0 +1,38 @@
+name: Oracle 7/24 Mumbai Bot
+on:
+  workflow_dispatch: # Bu satır "Run workflow" butonunu zorunlu olarak var eder
+  schedule:
+    - cron: '0 */5 * * *' # Bot kapansa bile 5 saatte bir otomatik yeniden başlar
+
+jobs:
+  run-oracle-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları İndir
+        uses: actions/checkout@v3
+
+      - name: Python Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Gerekli Kütüphaneleri Yükle
+        run: |
+          pip install oci
+
+      - name: Oracle Ayar Dosyasını Oluştur
+        run: |
+          mkdir -p ~/.oci
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oracle_key.pem
+          chmod 600 ~/.oci/oracle_key.pem
+          
+          echo "[DEFAULT]" > ~/.oci/config
+          echo "user=${{ secrets.OCI_USER_OCID }}" >> ~/.oci/config
+          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
+          echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
+          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
+          echo "key_file=~/.oci/oracle_key.pem" >> ~/.oci/config
+
+      - name: Botu Başlat
+        run: |
+          python main.py
