@@ -2,46 +2,49 @@ name: Oracle 7/24 Mumbai Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */5 * * *' # Bot kapansa bile 5 saatte bir otomatik yeniden tetiklenir
+    - cron: '*/10 * * * *'
+
+concurrency:
+  group: oracle-bot
+  cancel-in-progress: false
 
 jobs:
   run-oracle-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Kodları İndir
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Python Kur
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Gerekli Kütüphaneleri Yükle
+      - name: Kütüphaneleri yükle
         run: |
           python -m pip install --upgrade pip
           pip install oci paramiko python-dotenv requests
 
-      - name: Botun Aradığı Özel Dosyaları Oluştur
+      - name: Config dosyalarını oluştur
+        env:
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+          OCI_USER: ${{ secrets.OCI_USER_OCID }}
+          OCI_FP: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_REGION: ${{ secrets.OCI_REGION }}
+          OCI_COMP: ${{ secrets.OCI_COMPARTMENT_OCID }}
         run: |
-          # Sudo kullanmadan GitHub Actions'ın kendi ana dizininde klasörleri kuruyoruz
-          mkdir -p /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/home/ubuntu/oracle-freetier-instance-creation
-          
-          # Private Key dosyasını oluşturuyoruz
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oracle_key.pem
-          chmod 600 /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oracle_key.pem
-          
-          # Botun inatla aradığı o 'oci_config' dosyasını tam istediği formatta hazırlıyoruz
-          echo "[DEFAULT]" > /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config
-          echo "user=${{ secrets.OCI_USER_OCID }}" >> /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config
-          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config
-          echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config
-          echo "region=${{ secrets.OCI_REGION }}" >> /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config
-          echo "key_file=/home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oracle_key.pem" >> /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config
+          printf '%s\n' "$OCI_PRIVATE_KEY" > oracle_key.pem
+          chmod 600 oracle_key.pem
+          cat > oci_config <<EOF
+          [DEFAULT]
+          user=$OCI_USER
+          fingerprint=$OCI_FP
+          tenancy=$OCI_TENANCY
+          region=$OCI_REGION
+          key_file=$GITHUB_WORKSPACE/oracle_key.pem
+          EOF
+          echo "OCI_CONFIG_PATH=$GITHUB_WORKSPACE/oci_config" > .env
+          echo "COMPARTMENT_ID=$OCI_COMP" >> .env
 
-          # Botun şifreleri okuduğu .env dosyasını oluşturuyoruz
-          echo "OCI_CONFIG_PATH=/home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/oci_config" > /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env
-          echo "COMPARTMENT_ID=${{ secrets.OCI_COMPARTMENT_OCID }}" >> /home/runner/work/oracle-freetier-instance-creation/oracle-freetier-instance-creation/.env
-
-      - name: Botu Başlat
-        run: |
-          python main.py
+      - name: Botu çalıştır
+        run: python main.py
